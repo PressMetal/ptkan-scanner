@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Asset Scanner</title>
+    <!-- Links to the manifest for offline mobile installation -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
+        #result-container { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9; display: none; }
+        .result-text { font-size: 18px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <h2>Asset Scanner</h2>
+    
+    <!-- The camera scanner will appear inside this div -->
+    <div id="reader"></div>
+    
+    <!-- Where the scanned text (e.g., KAN-MV260007) will be displayed -->
+    <div id="result-container">
+        <h3>Scan Result:</h3>
+        <p class="result-text" id="result-text"></p>
+    </div>
+
+    <!-- Load the offline JS library -->
+    <script src="html5-qrcode.min.js"></script>
+    
+    <script>
+        // Register the Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        // Action to take when a QR code is successfully scanned
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('result-container').style.display = "block";
+            document.getElementById('result-text').innerText = decodedText;
+        }
+
+        // Initialize the QR Scanner
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader",
+            { fps: 10, qrbox: {width: 250, height: 250} },
+            false
+        );
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
