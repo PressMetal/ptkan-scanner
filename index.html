@@ -4,43 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline Asset Scanner</title>
-    <!-- Links to the manifest for offline mobile installation -->
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
-        #result-container { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9; display: none; }
-        .result-text { font-size: 18px; font-weight: bold; color: #333; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
+        h2 { text-align: center; }
+        #reader { width: 100%; margin: 0 auto; }
+        
+        /* New styling for the data template */
+        #result-container { 
+            margin-top: 20px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            background-color: #fff; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: none; 
+            overflow: hidden;
+        }
+        .result-header {
+            background-color: #f4f6f8;
+            padding: 12px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #e0e0e0;
+            margin: 0;
+            color: #333;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { 
+            padding: 12px 15px; 
+            text-align: left; 
+            border-bottom: 1px solid #eee; 
+            font-size: 14px;
+        }
+        th { width: 35%; color: #555; background-color: #fafafa; }
+        td { color: #222; font-weight: 500; }
+        tr:last-child th, tr:last-child td { border-bottom: none; }
+        
+        /* Error message styling */
+        #raw-text { color: red; font-size: 12px; padding: 10px 15px; display: none; }
     </style>
 </head>
 <body>
     <h2>Asset Scanner</h2>
     
-    <!-- The camera scanner will appear inside this div -->
     <div id="reader"></div>
     
-    <!-- Where the scanned text (e.g., KAN-MV260007) will be displayed -->
     <div id="result-container">
-        <h3>Scan Result:</h3>
-        <p class="result-text" id="result-text"></p>
+        <h3 class="result-header">Asset Details</h3>
+        <table>
+            <tr>
+                <th>Asset number</th>
+                <td id="asset-number"></td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td id="asset-name"></td>
+            </tr>
+            <tr>
+                <th>Asset subtype</th>
+                <td id="asset-subtype"></td>
+            </tr>
+            <tr>
+                <th>Department</th>
+                <td id="asset-department"></td>
+            </tr>
+        </table>
+        <div id="raw-text"></div>
     </div>
 
-    <!-- Load the offline JS library -->
     <script src="html5-qrcode.min.js"></script>
     
     <script>
-        // Register the Service Worker for offline support
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
 
-        // Action to take when a QR code is successfully scanned
         function onScanSuccess(decodedText, decodedResult) {
+            // Show the result container
             document.getElementById('result-container').style.display = "block";
-            document.getElementById('result-text').innerText = decodedText;
+            
+            // Check if the scanned text contains our specific delimiter '##'
+            if (decodedText.includes('##')) {
+                // Split the text into an array based on '##'
+                const parts = decodedText.split('##');
+                
+                // Map the array parts to the HTML table
+                document.getElementById('asset-number').innerText = parts[0] ? parts[0].trim() : '-';
+                document.getElementById('asset-name').innerText = parts[1] ? parts[1].trim() : '-';
+                document.getElementById('asset-subtype').innerText = parts[2] ? parts[2].trim() : '-';
+                document.getElementById('asset-department').innerText = parts[3] ? parts[3].trim() : '-';
+                
+                // Hide error message if successful
+                document.getElementById('raw-text').style.display = "none";
+            } else {
+                // Fallback: If it's a normal QR code that doesn't follow the format
+                document.getElementById('asset-number').innerText = decodedText;
+                document.getElementById('asset-name').innerText = 'Format Error';
+                document.getElementById('asset-subtype').innerText = 'Format Error';
+                document.getElementById('asset-department').innerText = 'Format Error';
+                
+                // Show the raw text so the user still sees what was scanned
+                const rawDiv = document.getElementById('raw-text');
+                rawDiv.innerText = "Raw Scan: " + decodedText;
+                rawDiv.style.display = "block";
+            }
         }
 
-        // Initialize the QR Scanner
         let html5QrcodeScanner = new Html5QrcodeScanner(
             "reader",
             { fps: 10, qrbox: {width: 250, height: 250} },
